@@ -2,8 +2,6 @@
 
 > **A** **fo**nt **t**o **he**lp **y**ou **re**ad **fas**ter.
 
-– Fork pushes a universal browser addon. Tampermonkey is used in my case. Iphone usecase, and works on sites like perlego. Some glitching to be expected, on Firefox you can scale using text-only to reduce glitches.
-
 This font provides faster reading through facilitating the reading process by guiding the eyes through text with artificial fixation points. As a result, the reader is only focusing on the highlighted initial letters and lets the brain center complete the word. This allows you to read in supersonic speed.
 
 The project is completely open-source, so please feel free to use and distribute it however you want.
@@ -69,6 +67,28 @@ Or use it as the default font in your browser:
 
 ![Example.com with new sans-serif font](https://github.com/Born2Root/Fast-Font/blob/main/docs/browser.jpg)
 
+### Use in the Browser on random Websites
+
+Thank you @P4Steve who submitted a solution to use FastFont on Websites using your Browser.
+You can use universal browser addons like Tampermonkey that also works on mobile Browsers.
+Just install Tampermonkey to your browser and load the config file, that you can find the repo [AnyDeviceFastSerifBrowse.user.js](https://github.com/Born2Root/Fast-Font/blob/main/AnyDeviceFastSerifBrowse.user.js)
+Still you can expect some glitching, but in general it should work. On Firefox you can scale using text-only to reduce glitches.
+
+### Use in Firefox Reader-Mode
+
+Thank you @D1yt who submitted this tutorial.
+It shows you how you can add Fast Fonts to Firefox Reader Mode as selectable fonts.
+
+1. Install the fonts.
+2. Open Firefox’s `about:config` page.
+3. Search for `reader.font_type.values`.
+4. Set the value to:
+```json
+["sans-serif","serif","monospace","Fast_Sans","Fast_Serif","Fast_Mono","Fast_Sans-Dotted","Fast OpenDyslexic"]
+```
+Make sure to replace these with the actual font family names installed on your system.
+5. When viewing a Reader Mode–compatible page, you can now switch to those fonts in the Reader Mode font menu.
+
 ### Use on Kobo eReader
 
 If you have a Kobo Reader with KoReader-Extension you can also use it there.
@@ -128,6 +148,13 @@ To give you an introduction on how to do this, you can find an elaborate Tutoria
 To use the font in other languages world wide it is necessary to enrich it with the appropriate characters and their substitution.
 With about 120 special characters nearly all European languages are covered.
 See [opentype_feature.fea](opentype_feature.fea) for an elaborate example.
+
+## What are the base fonts that were used
+The base fonts are:
+- Fast_Sans = [Inter](https://github.com/rsms/inter)
+- Fast_Serif = Bookerly
+- Fast_Mono = [FiraCode](https://github.com/tonsky/FiraCode)
+- Fast_OpenDyslexic = [OpenDyslexic](https://opendyslexic.org/)
 
 ---
 
