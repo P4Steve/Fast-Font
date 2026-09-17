@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book Measure Typesetter</title>
+  <style>
+    :root {
+      --bg: #d7e6d4;
+      --bg-deep: #c9dbc6;
+      --paper: #f7f3e8;
+      --ink: #1c1c1c;
+      --border: #1a1a1a;
+      --muted: #4a5548;
+      --panel: #eef5ec;
+      --accent: #5b7a57;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    body {
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #e8f3e4 0%, transparent 50%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+    }
+
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.55rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .lede {
+      margin: 0 0 22px;
+      color: var(--muted);
+      max-width: 62ch;
+      line-height: 1.5;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 380px) 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 2px solid var(--border);
+      padding: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 12px 0 6px;
+      color: var(--muted);
+    }
+
+    label:first-child { margin-top: 0; }
+
+    textarea, select, input[type="text"] {
+      width: 100%;
+      border: 2px solid var(--border);
+      background: #fbfdf9;
+      color: var(--ink);
+      font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      padding: 8px;
+    }
+
+    textarea#fontB64 { min-height: 90px; resize: vertical; }
+    textarea#rawText { min-height: 180px; resize: vertical; font-family: Georgia, serif; }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    button {
+      margin-top: 14px;
+      width: 100%;
+      border: 2px solid var(--border);
+      background: var(--accent);
+      color: #f7fff5;
+      padding: 10px 12px;
+      font: 600 0.95rem/1 Georgia, serif;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: #fbfdf9;
+      color: var(--ink);
+      margin-top: 8px;
+    }
+
+    button:hover { filter: brightness(1.05); }
+
+    .status {
+      margin-top: 10px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      min-height: 1.2em;
+    }
+
+    .stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* True trade-paperback page: 6in × 9in */
+    .book {
+      width: 6in;
+      min-height: 9in;
+      max-width: 100%;
+      background: var(--paper);
+      border: 3px solid var(--border);
+      box-shadow: 8px 10px 0 rgba(26, 26, 26, 0.12);
+      padding: 0.85in 0.75in 0.95in;
+      position: relative;
+    }
+
+    .book::before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border: 1px solid rgba(26, 26, 26, 0.18);
+      pointer-events: none;
+    }
+
+    #pages {
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      width: 100%;
+    }
+
+    .page-sheet {
+      width: 6in;
+      max-width: 100%;
+      min-height: 9in;
+      background: var(--paper);
+      border: 3px solid var(--border);
+      box-shadow: 8px 10px 0 rgba(26, 26, 26, 0.12);
+      padding: 0.85in 0.75in 0.95in;
+      position: relative;
+    }
+
+    .page-sheet::before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border: 1px solid rgba(26, 26, 26, 0.18);
+      pointer-events: none;
+    }
+
+    .folio {
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: #333;
+      margin-top: 0.45in;
+    }
+
+    .measure {
+      /* Book measure: ~60–68 characters ≈ 10–12 words / line */
+      max-width: 28pc;
+      margin: 0 auto;
+      font-family: "BookCustom", Georgia, "Times New Roman", serif;
+      font-size: 12pt;
+      line-height: 1.5;
+      color: var(--ink);
+      text-align: justify;
+      hyphens: auto;
+      -webkit-hyphens: auto;
+    }
+
+    .measure p {
+      margin: 0 0 2em;
+      text-indent: 1.25em;
+    }
+
+    .measure p:first-child { text-indent: 0; }
+
+    .stats {
+      width: 6in;
+      max-width: 100%;
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 920px) {
+      .layout { grid-template-columns: 1fr; }
+      .book, .page-sheet, .stats { width: 100%; min-height: 0; }
+      .page-sheet { min-height: 70vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Book Measure Typesetter</h1>
+    <p class="lede">
+      Paste a base64-encoded font and raw manuscript text. The page applies the face
+      client-side and sets type to a trade-paperback measure: 6&nbsp;×&nbsp;9&nbsp;in,
+      ~10–12 words per line, line-height 1.5, paragraphs double-spaced.
+    </p>
+
+    <div class="layout">
+      <aside class="panel">
+        <label for="fontB64">Base64 font</label>
+        <textarea id="fontB64" placeholder="AAEAAAALAIAAAwAwT1MvMg…  (TTF, OTF, WOFF, or WOFF2)"></textarea>
+
+        <div class="row">
+          <div>
+            <label for="fontFormat">Format</label>
+            <select id="fontFormat">
+              <option value="auto">Auto-detect</option>
+              <option value="woff2">WOFF2</option>
+              <option value="woff">WOFF</option>
+              <option value="truetype">TTF</option>
+              <option value="opentype">OTF</option>
+            </select>
+          </div>
+          <div>
+            <label for="fontName">Family name</label>
+            <input id="fontName" type="text" value="BookCustom" />
+          </div>
+        </div>
+
+        <label for="rawText">Raw text</label>
+        <textarea id="rawText" placeholder="Paste chapters here. Blank lines become paragraphs."></textarea>
+
+        <button type="button" id="applyBtn">Set type</button>
+        <button type="button" id="sampleBtn" class="secondary">Load sample text</button>
+        <div class="status" id="status">Waiting for a font and text.</div>
+      </aside>
+
+      <div class="stage">
+        <div class="stats" id="stats">
+          <span>0 words</span>
+          <span>0 lines (est.)</span>
+          <span>~0 wpm book pace at 250 wpm</span>
+        </div>
+        <div id="pages">
+          <article class="page-sheet">
+            <div class="measure" id="preview">
+              <p>Your typeset pages will appear here.</p>
+            </div>
+            <div class="folio">1</div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SAMPLE =
+      "The morning light fell across the desk in a long, quiet bar.\n\n" +
+      "She opened the notebook and wrote the first sentence without looking at the clock. " +
+      "Outside, a cart rattled over wet stone. The room kept its own weather: paper, dust, and the faint green of leaves pressed against the glass.\n\n" +
+      "A book is not a screen. Its line is a breath. Ten or twelve words, then a turn. " +
+      "The eye learns the width the way a walker learns a path. Paragraphs rest between those turns, " +
+      "so the mind can lift and set itself down again.\n\n" +
+      "He read slowly, not because the words were hard, but because they were placed. " +
+      "Each line held about as much as a spoken phrase. That is the old measure: not speed for its own sake, " +
+      "but a pace a page can keep.";
+
+    const fontB64 = document.getElementById("fontB64");
+    const fontFormat = document.getElementById("fontFormat");
+    const fontName = document.getElementById("fontName");
+    const rawText = document.getElementById("rawText");
+    const applyBtn = document.getElementById("applyBtn");
+    const sampleBtn = document.getElementById("sampleBtn");
+    const status = document.getElementById("status");
+    const pages = document.getElementById("pages");
+    const stats = document.getElementById("stats");
+
+    let fontSheet;
+
+    function cleanBase64(raw) {
+      let s = (raw || "").trim();
+      const data = s.match(/^data:.*;base64,(.+)$/s);
+      if (data) s = data[1];
+      return s.replace(/\s+/g, "");
+    }
+
+    function sniffFormat(b64, chosen) {
+      if (chosen !== "auto") return chosen;
+      try {
+        const bin = atob(b64.slice(0, 16));
+        if (bin.includes("wOF2")) return "woff2";
+        if (bin.includes("wOFF")) return "woff";
+        if (bin.startsWith("OTTO")) return "opentype";
+        if (bin.startsWith("\x00\x01\x00\x00") || bin.includes("true")) return "truetype";
+      } catch (_) { /* fall through */ }
+      return "truetype";
+    }
+
+    function applyFont(b64, format, family) {
+      const mime = {
+        woff2: "font/woff2",
+        woff: "font/woff",
+        truetype: "font/ttf",
+        opentype: "font/otf"
+      }[format] || "font/ttf";
+
+      if (fontSheet) fontSheet.remove();
+      fontSheet = document.createElement("style");
+      fontSheet.textContent =
+        "@font-face{font-family:'" + family.replace(/'/g, "\\'") + "';" +
+        "src:url(data:" + mime + ";base64," + b64 + ") format('" + format + "');" +
+        "font-weight:normal;font-style:normal;font-display:swap;}";
+      document.head.appendChild(fontSheet);
+    }
+
+    function paragraphsFrom(text) {
+      const blocks = text
+        .replace(/\r\n/g, "\n")
+        .split(/\n\s*\n+/)
+        .map(function (block) {
+          return block.replace(/\n+/g, " ").replace(/\s+/g, " ").trim();
+        })
+        .filter(Boolean);
+      return blocks.length ? blocks : [""];
+    }
+
+    function countWords(text) {
+      const m = text.trim().match(/\S+/g);
+      return m ? m.length : 0;
+    }
+
+    /* Book pace: ~10.5 words/line (common 60–65 char measure), 1.5 line-height.
+       Silent reading often cited near 250–300 wpm; lines/min = wpm / words-per-line. */
+    const WORDS_PER_LINE = 10.5;
+    const READING_WPM = 250;
+
+    function render(text, family) {
+      const paras = paragraphsFrom(text);
+      const html = paras.map(function (p) {
+        return "<p>" + escapeHtml(p) + "</p>";
+      }).join("");
+
+      pages.innerHTML =
+        '<article class="page-sheet">' +
+          '<div class="measure" id="preview" style="font-family:\'' +
+            family.replace(/'/g, "\\'") + "', Georgia, serif;\">" + html + "</div>" +
+          '<div class="folio">1</div>' +
+        "</article>";
+
+      paginate();
+      updateStats(paras.join(" "));
+    }
+
+    function escapeHtml(s) {
+      return s
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function usableHeight(sheet) {
+      const folio = sheet.querySelector(".folio");
+      const padTop = parseFloat(getComputedStyle(sheet).paddingTop) || 0;
+      const padBot = parseFloat(getComputedStyle(sheet).paddingBottom) || 0;
+      const folioH = folio ? folio.offsetHeight + 24 : 40;
+      return sheet.clientHeight - padTop - padBot - folioH;
+    }
+
+    function paginate() {
+      const first = pages.querySelector(".page-sheet");
+      if (!first) return;
+      const measure = first.querySelector(".measure");
+      const family = measure.style.fontFamily;
+      const sourceParas = Array.prototype.map.call(
+        measure.querySelectorAll("p"),
+        function (p) { return p.textContent; }
+      );
+
+      const probe = document.createElement("div");
+      probe.className = "measure";
+      probe.style.cssText = measure.style.cssText + ";position:absolute;left:-9999px;visibility:hidden;";
+      probe.style.fontFamily = family;
+      document.body.appendChild(probe);
+
+      const limit = usableHeight(first);
+      const sheets = [];
+      let current = [];
+
+      function flush() {
+        if (!current.length) return;
+        sheets.push(current);
+        current = [];
+      }
+
+      sourceParas.forEach(function (paraText) {
+        const words = paraText.split(/\s+/).filter(Boolean);
+        if (!words.length) return;
+        let low = 0;
+        while (low < words.length) {
+          let fit = low;
+          for (let hi = words.length; hi > low; hi--) {
+            probe.innerHTML = current.concat(
+              ["<p>" + escapeHtml(words.slice(low, hi).join(" ")) + "</p>"]
+            ).join("");
+            if (probe.scrollHeight <= limit) {
+              fit = hi;
+              break;
+            }
+          }
+          if (fit === low) {
+            if (current.length) flush();
+            else {
+              current.push("<p>" + escapeHtml(words[low]) + "</p>");
+              flush();
+              low += 1;
+            }
+          } else {
+            current.push("<p>" + escapeHtml(words.slice(low, fit).join(" ")) + "</p>");
+            low = fit;
+            probe.innerHTML = current.join("");
+            if (probe.scrollHeight > limit * 0.92 && low < words.length) flush();
+          }
+        }
+      });
+      flush();
+      probe.remove();
+
+      if (!sheets.length) {
+        sheets.push(["<p></p>"]);
+      }
+
+      pages.innerHTML = sheets.map(function (blocks, i) {
+        return '<article class="page-sheet">' +
+          '<div class="measure" style="font-family:' + family.replace(/"/g, "&quot;") + ';">' +
+          blocks.join("") + "</div>" +
+          '<div class="folio">' + (i + 1) + "</div>" +
+          "</article>";
+      }).join("");
+    }
+
+    function updateStats(text) {
+      const words = countWords(text);
+      const lines = words ? Math.ceil(words / WORDS_PER_LINE) : 0;
+      const minutes = words ? (words / READING_WPM) : 0;
+      const linesPerMin = READING_WPM / WORDS_PER_LINE;
+      stats.innerHTML =
+        "<span>" + words + " words</span>" +
+        "<span>" + lines + " lines at ~" + WORDS_PER_LINE + " words/line</span>" +
+        "<span>~" + minutes.toFixed(1) + " min at " + READING_WPM +
+        " wpm (" + linesPerMin.toFixed(1) + " lines/min)</span>";
+    }
+
+    function setType() {
+      const family = (fontName.value || "BookCustom").trim();
+      const text = rawText.value;
+      const b64 = cleanBase64(fontB64.value);
+
+      if (b64) {
+        try {
+          atob(b64.slice(0, 24));
+        } catch (err) {
+          status.textContent = "That base64 string is not valid.";
+          return;
+        }
+        const format = sniffFormat(b64, fontFormat.value);
+        applyFont(b64, format, family);
+        status.textContent = "Font loaded as " + format + " → " + family + ".";
+      } else {
+        status.textContent = "No font pasted; using Georgia as stand-in.";
+      }
+
+      render(text || "Paste text to typeset.", family);
+    }
+
+    applyBtn.addEventListener("click", setType);
+    sampleBtn.addEventListener("click", function () {
+      rawText.value = SAMPLE;
+      setType();
+    });
+
+    rawText.value = SAMPLE;
+    setType();
+    window.addEventListener("resize", function () {
+      if (rawText.value) render(rawText.value, (fontName.value || "BookCustom").trim());
+    });
+  </script>
+</body>
+</html>
